@@ -2,12 +2,12 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
-#define maxrownum 200000
-#define maxcolnum 800
-#define maxurllen 100
+#define maxrownum 320000
+#define maxcolnum 300
+#define maxurllen 200
 #define maxcoosize 5000000 //以COO存储的节点个数
 #define a 0.15      //阻尼系数
-#define e 0.0000001   //精度
+#define e 0.0001   //精度
 
 //COO稀疏矩阵,ell溢出的数据按序存储在coo
 typedef struct{
@@ -107,18 +107,18 @@ int main(int argc, char** argv)
             if(j<maxcolnum)     //ell
             {
                 G[i][j]=G[i][j]/outdegree[g[i][j]];
-                G[i][j]=(1-a)*G[i][j]+a/row_num;
+                G[i][j]=(1-a)*G[i][j];
             }
             else               //coo
             {
                 G1.value[offset]=G1.value[offset]/outdegree[G1.col[offset]];
-                G1.value[offset]=(1-a)*G1.value[offset]+a/row_num;
+                G1.value[offset]=(1-a)*G1.value[offset];
                 offset++;
             }
         }
     }
 
-
+    printf("开始迭代\n");
     //迭代计算V，Power Iteration幂迭代
 	double E=1,Etemp;
 	int num=0;   //计数power次数
@@ -132,24 +132,24 @@ int main(int argc, char** argv)
 		}
 		E=0;
 		offset=0;
+		int sum=0;
+
+		for(i=0;i<row_num;i++)
+            sum+=a/row_num*Vtemp[i];
+
+        for(i=0;i<row_num;i++)
+            V[i]+=sum;
+        //COO
+        for(i=0;i<G1.totalnum;i++)
+            V[G1.row[i]]+=Vtemp[G1.col[i]]*G1.value[i];
+        //ELL
 		for(i=0;i<row_num;i++)
         {
-            int k=0;
-            for(j=0;j<row_num;j++)
+            for(j=0;j<indegree[i];j++)
             {
-                if(k<maxcolnum && j==g[i][k])
+                if(j<maxcolnum)
                 {
-                    V[i]+=G[i][k]*Vtemp[j];
-                    k++;
-                }
-                else if(k>=maxcolnum && j==G1.col[offset])
-                {
-                    V[i]+=G1.value[offset]*Vtemp[j];
-                    offset++;
-                }
-                else
-                {
-                    V[i]+=a/row_num*Vtemp[j];
+                    V[i]+=G[i][j]*Vtemp[g[i][j]];
                 }
             }
             //计算精度
