@@ -2,12 +2,12 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
-#define maxrownum 320000
+#define maxrownum 330000
 #define maxcolnum 300
 #define maxurllen 200
 #define maxcoosize 5000000 //以COO存储的节点个数
 #define a 0.15      //阻尼系数
-#define e 0.0001   //精度
+#define e 0.000001   //精度
 
 //COO稀疏矩阵,ell溢出的数据按序存储在coo
 typedef struct{
@@ -132,10 +132,11 @@ int main(int argc, char** argv)
 		}
 		E=0;
 		offset=0;
-		int sum=0;
+		double sum=0;
 
 		for(i=0;i<row_num;i++)
-            sum+=a/row_num*Vtemp[i];
+            sum+=Vtemp[i];
+	sum=a/row_num*sum;
 
         for(i=0;i<row_num;i++)
             V[i]+=sum;
@@ -157,9 +158,14 @@ int main(int argc, char** argv)
             if(Etemp>E)
                 E=Etemp;
         }
-        printf("%d:%.10f\n",num,E);
+        printf("%d:%.12f\n",num,E);
 	}
     printf("power次数: %d\n",num);
+    double sum=0;
+    for(i=0;i<row_num;i++)
+	sum+=V[i];
+    for(i=0;i<row_num;i++)
+	V[i]/=sum;
     topTen(argv[2],row_num);
 
 	return 0;
@@ -187,7 +193,7 @@ void topTen(char* wfilename,int N)
                 top_value=V[j];
             }
         }
-        fprintf(fpt,"%-80s %.10f\n",urls[top],top_value);
+        fprintf(fpt,"%s %.12f\n",urls[top],top_value);
         V[top]=0;
     }
     fclose(fpt);
